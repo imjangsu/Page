@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026년 손익계산서 보고서</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #F3F4F6;
+            color: #1F2937;
+        }
+        .table-row-hover:hover {
+            background-color: #F9FAFB;
+        }
+        .is-bold { font-weight: 700; color: #111827; }
+        .is-highlight { background-color: #EFF6FF; }
+    </style>
+</head>
+<body class="antialiased p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <header class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold mb-3">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    재무 보고서
+                </div>
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">2026년 손익계산서</h1>
+                <p class="text-gray-500 mt-2 font-medium">대상 기간: 2026.01.01 ~ 2026.12.31 | 단위: 원</p>
+            </div>
+            
+            <div class="flex flex-col items-end gap-2">
+                <label for="excelFileInput" class="cursor-pointer bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 py-2 px-4 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    데이터 파일 변경 (Excel/CSV)
+                </label>
+                <input type="file" id="excelFileInput" accept=".csv, .xlsx, .xls" class="hidden">
+                <p class="text-xs text-gray-400" id="dataSourceText">현재 데이터: 기본 예시 데이터</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- 매출액 카드 -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10 text-blue-600">
+                    <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-500 mb-2 relative z-10">총 매출액</h3>
+                <p class="text-3xl font-black text-gray-900 relative z-10" id="summaryRevenue">0</p>
+            </div>
+            
+            <!-- 영업이익 카드 -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10 text-emerald-600">
+                    <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-500 mb-2 relative z-10">영업이익</h3>
+                <p class="text-3xl font-black text-gray-900 relative z-10" id="summaryOperatingIncome">0</p>
+                <p class="text-sm font-semibold text-emerald-600 mt-2 relative z-10" id="marginOperating">이익률: 0%</p>
+            </div>
+
+            <!-- 당기순이익 카드 -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10 text-indigo-600">
+                    <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-500 mb-2 relative z-10">당기순이익</h3>
+                <p class="text-3xl font-black text-gray-900 relative z-10" id="summaryNetIncome">0</p>
+                <p class="text-sm font-semibold text-indigo-600 mt-2 relative z-10" id="marginNet">이익률: 0%</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                수익 및 비용 구조 시각화
+            </h2>
+            <div class="w-full h-64 md:h-80 relative">
+                <canvas id="incomeChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-6 md:p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h2 class="text-xl font-bold text-gray-900">손익계산서 상세 내역</h2>
+                <button onclick="window.print()" class="text-gray-500 hover:text-gray-800 transition-colors p-2 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-50 text-gray-500 border-b border-gray-200 text-sm">
+                        <tr>
+                            <th class="py-4 px-6 font-semibold w-1/2">과목</th>
+                            <th class="py-4 px-6 font-semibold text-right w-1/2">금액 (원)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statementTableBody" class="text-base text-gray-700 divide-y divide-gray-100">
+                        <!-- Javascript로 데이터가 삽입됩니다. -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let myChart = null;
+
+        // K-IFRS 기준 기본 손익계산서 양식 및 예시 데이터
+        // 실제 '손익계산서_2026.csv' 파일 로드 실패 시 이 데이터가 사용됩니다.
+        const defaultData = [
+            { label: 'Ⅰ. 매출액', value: 1500000000, isBold: true, isHighlight: true, indent: 0 },
+            { label: '상품매출', value: 1000000000, isBold: false, isHighlight: false, indent: 1 },
+            { label: '제품매출', value: 500000000, isBold: false, isHighlight: false, indent: 1 },
+            { label: 'Ⅱ. 매출원가', value: -800000000, isBold: true, isHighlight: false, indent: 0 },
+            { label: 'Ⅲ. 매출총이익', value: 700000000, isBold: true, isHighlight: true, indent: 0 },
+            { label: 'Ⅳ. 판매비와관리비', value: -300000000, isBold: true, isHighlight: false, indent: 0 },
+            { label: '급여', value: -150000000, isBold: false, isHighlight: false, indent: 1 },
+            { label: '복리후생비', value: -300000000, isBold: false, isHighlight: false, indent: 1 },
+            { label: '임차료', value: -50000000, isBold: false, isHighlight: false, indent: 1 },
+            { label: '감가상각비', value: -70000000, isBold: false, isHighlight: false, indent: 1 },
+            { label: 'Ⅴ. 영업이익', value: 400000000, isBold: true, isHighlight: true, indent: 0 },
+            { label: 'Ⅵ. 영업외수익', value: 50000000, isBold: false, isHighlight: false, indent: 0 },
+            { label: '이자수익', value: 10000000, isBold: false, isHighlight: false, indent: 1 },
+            { label: '유형자산처분이익', value: 40000000, isBold: false, isHighlight: false, indent: 1 },
+            { label: 'Ⅶ. 영업외비용', value: -20000000, isBold: false, isHighlight: false, indent: 0 },
+            { label: '이자비용', value: -20000000, isBold: false, isHighlight: false, indent: 1 },
+            { label: 'Ⅷ. 법인세비용차감전순이익', value: 430000000, isBold: true, isHighlight: true, indent: 0 },
+            { label: 'Ⅸ. 법인세비용', value: -86000000, isBold: false, isHighlight: false, indent: 0 },
+            { label: 'Ⅹ. 당기순이익', value: 344000000, isBold: true, isHighlight: true, indent: 0 },
+        ];
+
+        // 숫자 포맷팅 (원 단위 콤마)
+        const formatCurrency = (num) => {
+            return new Intl.NumberFormat('ko-KR').format(num);
+        };
+
+        // 비율 계산
+        const calculateMargin = (part, total) => {
+            if(total === 0) return 0;
+            return ((part / total) * 100).toFixed(1);
+        };
+
+        // 데이터 기반으로 UI 업데이트
+        function updateDashboard(data) {
+            const tableBody = document.getElementById('statementTableBody');
+            tableBody.innerHTML = '';
+
+            let revenue = 0;
+            let opIncome = 0;
+            let netIncome = 0;
+            
+            // 차트용 데이터 수집
+            const chartLabels = ['매출액', '매출원가', '판관비', '영업이익', '당기순이익'];
+            const chartData = [0, 0, 0, 0, 0];
+
+            // 테이블 렌더링 및 데이터 추출
+            data.forEach(row => {
+                // 핵심 지표 추출 (레이블 이름 기반 유추)
+                if (row.label.includes('매출액') && !row.label.includes('총')) {
+                    revenue = row.value;
+                    chartData[0] = row.value;
+                } else if (row.label.includes('매출원가')) {
+                    chartData[1] = Math.abs(row.value);
+                } else if (row.label.includes('판매비') || row.label.includes('판관비')) {
+                    chartData[2] = Math.abs(row.value);
+                } else if (row.label === 'Ⅴ. 영업이익' || row.label.trim() === '영업이익') {
+                    opIncome = row.value;
+                    chartData[3] = row.value;
+                } else if (row.label.includes('당기순이익')) {
+                    netIncome = row.value;
+                    chartData[4] = row.value;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = `table-row-hover transition-colors ${row.isHighlight ? 'is-highlight' : ''}`;
+                
+                // 들여쓰기 클래스
+                let indentClass = '';
+                if(row.indent === 1) indentClass = 'pl-10 text-gray-600';
+                else if(row.indent === 2) indentClass = 'pl-16 text-gray-500';
+                else indentClass = 'pl-6';
+
+                const fontClass = row.isBold ? 'font-bold text-gray-900' : 'font-medium';
+                
+                // 금액 표시 (음수인 경우 빨간색 또는 괄호 표시 등 조정 가능)
+                const valueColor = row.value < 0 ? 'text-red-500' : 'text-gray-900';
+
+                tr.innerHTML = `
+                    <td class="py-4 pr-6 ${indentClass} ${fontClass}">${row.label}</td>
+                    <td class="py-4 px-6 text-right ${fontClass} tracking-tight ${valueColor}">
+                        ${formatCurrency(row.value)}
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            // 요약 카드 업데이트
+            document.getElementById('summaryRevenue').innerText = formatCurrency(revenue);
+            document.getElementById('summaryOperatingIncome').innerText = formatCurrency(opIncome);
+            document.getElementById('summaryNetIncome').innerText = formatCurrency(netIncome);
+
+            document.getElementById('marginOperating').innerText = `이익률: ${calculateMargin(opIncome, revenue)}%`;
+            document.getElementById('marginNet').innerText = `이익률: ${calculateMargin(netIncome, revenue)}%`;
+
+            // 차트 업데이트 호출
+            updateChart(chartLabels, chartData);
+        }
+
+        // 차트 업데이트 함수
+        function updateChart(labels, data) {
+            const ctx = document.getElementById('incomeChart').getContext('2d');
+            
+            if(myChart) {
+                myChart.destroy();
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '금액 (원)',
+                        data: data,
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)', // 매출액 - 블루
+                            'rgba(239, 68, 68, 0.8)',  // 매출원가 - 레드
+                            'rgba(245, 158, 11, 0.8)', // 판관비 - 오렌지
+                            'rgba(16, 185, 129, 0.8)', // 영업이익 - 에메랄드
+                            'rgba(99, 102, 241, 0.8)'  // 당기순이익 - 인디고
+                        ],
+                        borderRadius: 6,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.raw) + ' 원';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#F3F4F6' },
+                            ticks: {
+                                callback: function(value) {
+                                    // 억 단위로 축약 표시
+                                    return (value / 100000000).toFixed(0) + '억';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 엑셀/CSV 데이터 파서 (SheetJS 활용)
+        function parseExcelData(rows) {
+            const parsedData = [];
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length < 2) continue; // 데이터가 없는 행 건너뛰기
+
+                const labelRaw = row[0];
+                let valueRaw = row[1];
+
+                if (typeof labelRaw !== 'string') continue;
+                
+                // 첫 번째 줄 헤더 건너뛰기
+                if (labelRaw.includes('과목') || labelRaw.includes('항목')) continue;
+
+                let value = 0;
+                if (typeof valueRaw === 'number') {
+                    value = valueRaw;
+                } else if (typeof valueRaw === 'string') {
+                    const parsedVal = parseInt(valueRaw.replace(/['",\s]/g, ''), 10);
+                    if (isNaN(parsedVal)) continue;
+                    value = parsedVal;
+                } else {
+                    continue;
+                }
+
+                const label = labelRaw.trim();
+                // 들여쓰기 및 강조 로직 처리
+                const isMainCategory = /^[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]/.test(label) || label.includes('이익') || label.includes('매출액') || label.includes('비용') || label.includes('원가');
+                const isIndent = !isMainCategory;
+
+                parsedData.push({
+                    label: label,
+                    value: value,
+                    isBold: isMainCategory,
+                    isHighlight: label.includes('이익'),
+                    indent: isIndent ? 1 : 0
+                });
+            }
+            return parsedData;
+        }
+
+        // 초기 데이터 로드 (웹 서버 환경에서 '손익계산서의 사본.xlsx' 파일을 시도)
+        async function initLoad() {
+            try {
+                // 브라우저 샌드박스 환경에서는 로컬 파일을 fetch 할 수 없을 수 있으므로 예외처리
+                const response = await fetch('손익계산서의 사본.xlsx');
+                if (!response.ok) throw new Error('File not found');
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                const data = parseExcelData(rows);
+                document.getElementById('dataSourceText').innerText = "현재 데이터: 손익계산서의 사본.xlsx (자동 로드됨)";
+                updateDashboard(data);
+            } catch (error) {
+                console.log('Excel 파일을 자동으로 찾을 수 없어 기본 예시 데이터를 표시합니다.', error);
+                updateDashboard(defaultData);
+            }
+        }
+
+        // 파일 업로드 이벤트 리스너 (.xlsx, .csv 처리)
+        document.getElementById('excelFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                // 데이터를 2차원 배열 형태로 추출
+                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                const parsedData = parseExcelData(rows);
+                document.getElementById('dataSourceText').innerText = `현재 데이터: ${file.name}`;
+                updateDashboard(parsedData);
+                
+                // 동일한 파일을 수정하여 다시 선택해도 이벤트가 발생하도록 input 초기화
+                document.getElementById('excelFileInput').value = '';
+            };
+            
+            // 엑셀 파일은 ArrayBuffer로 읽어야 함
+            reader.readAsArrayBuffer(file);
+        });
+
+        // 페이지 로드 시 실행
+        window.onload = initLoad;
+
+    </script>
+</body>
+</html>
